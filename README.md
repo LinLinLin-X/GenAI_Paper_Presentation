@@ -89,6 +89,7 @@ $$
 * $y_k$: Current output (e.g., next token prediction).
 * $\mathbf{h}_k$: The current **hidden state** (the internal **memory**).
 * $\bar{\mathbf{A}}, \bar{\mathbf{B}}$: Discretized matrices derived from the continuous parameters $\mathbf{A}, \mathbf{B}$ and the time step $\Delta$.
+* 
 The key insight is:  
 **S4 discovers a stable and efficient way to update memory over long sequences without forgetting.**
 

@@ -94,41 +94,40 @@ The key insight is:
 
 ### 2.2 Pseudocode
 
-**Training Mode (Convolution - Parallel):**
+**S4 Forward Pass:**
 ```python
-# Step 1: Compute SSM convolution kernel K (THIS IS THE KEY INNOVATION)
-K = compute_S4_kernel(A, B, C, length=L)  
-# Uses: HiPPO matrix → NPLR form → Cauchy kernel → FFT
-# Complexity: O(N + L) instead of O(N²L)
+Input: Sequence U of length L, dimension D
+Params: State matrix A (structured), Input matrix B, Output matrix C
+Output: Sequence Y of shape (L, D)
 
-# Step 2: Convolve input with kernel (can parallelize!)
-y = K * u  # Convolution over entire sequence at once
+Procedure S4(U):
+
+1. # Precompute convolution kernel
+   K = ComputeSSMKernel(A, B, C, length=L)
+
+2. # Perform convolution between input and kernel
+   Y = Convolution(U, K)
+
+3. # Apply optional nonlinear layer normalization & residual
+   Y = LayerNorm(Y)
+   Y = Activation(Y)      # e.g., GELU
+
+Return Y
 ```
 
-**Inference Mode (Recurrence - Sequential):**
+**ComputeSSMKernel(A, B, C):**
 ```python
-# Initialize memory state
-x = zeros(N)  # N-dimensional hidden state
+Procedure ComputeSSMKernel(A, B, C, length L):
 
-# Process sequence step-by-step
-for t in range(L):
-    x = A_discrete @ x + B_discrete * u[t]  # Update memory
-    y[t] = C @ x                             # Compute output
+1. # Convert continuous A to discrete A_bar
+   A_bar = Discretize(A)
 
-return y
+2. # Compute powers of A_bar (state evolution)
+   For t = 1 to L:
+        K[t] = C * (A_bar^(t-1)) * B
+
+3. Return Kernel K
 ```
-
-**Key Variables:**
-* **u** = input sequence (e.g., pixels, audio samples, text tokens)
-* **x** = N-dimensional hidden state (internal memory)
-* **y** = output sequence
-* **A, B, C** = learned SSM parameters (initialized from HiPPO)
-* **K** = convolution kernel (length L, computed efficiently)
-
-**Why This Works:**
-- Training: Use fast convolution (like CNNs) → O(L log L)
-- Inference: Use recurrence (like RNNs) → O(1) per step
-- Best of both worlds!
 
 ### 2.3 Why Is This Fast?
 
@@ -168,7 +167,7 @@ S4 achieves **state-of-the-art** results across all LRA tasks:
 | Pathfinder | 94.20% | 77.80% | +16.40% |
 | **Path-X** | **96.35%** | **✗ (50% random)** | **First to solve!** |
 
-### 4.2 Raw Speech Classification (SC10)
+### 4.2 Raw Speech Classification
 
 * S4: **98.32%** accuracy on length-16,000 raw audio
 * Best baseline: 96.25% (WaveGAN-D with 90× more parameters)
@@ -229,7 +228,7 @@ This paper helped **renew interest** in non-attention architectures.
 
 ---
 
-## 8. Citation (2 points)
+## 8. Citation
 
 ```bibtex
 @article{gu2022efficient,
